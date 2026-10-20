@@ -15,3 +15,30 @@ header nav{display:flex;gap:14px;margin-left:auto}header nav a{color:#264e7b;fon
 #tooltip{max-height:calc(100dvh - 20px);overflow-y:auto}
 
 .introduction{max-width:1418px;margin:16px auto;padding:14px;border:1px solid #aaa;background:#f6f6f6}.introduction h2{margin-top:0;font-size:16px}.introduction p{margin:8px 0;max-width:1000px}.setup-first{padding:10px 12px;background:#e2eaf3;border-left:3px solid #376394}.engine-download{margin:12px 0;border:1px solid #aaa;padding:12px;background:#eee}.engine-download summary{font-weight:bold;cursor:pointer}.engine-settings{display:flex;align-items:flex-end;flex-wrap:wrap;gap:14px;margin:12px 0}.engine-settings label{min-width:210px;max-width:400px;flex:1}.engine-actions{display:flex;gap:8px;flex-wrap:wrap}.nav-disabled{color:#888;font-size:12px;cursor:default}.nav-disabled small{font-size:11px}.conversion-log{margin-top:18px}.conversion-log summary{cursor:pointer}dialog li{margin:9px 0;line-height:1.6}dialog a{color:#264e7b}header nav{align-items:center;flex-wrap:wrap}@media(max-width:1450px){.introduction{margin:16px}}@media(max-width:700px){.introduction{margin:10px;padding:10px}.engine-settings{display:block}.engine-settings label{margin:12px 0;max-width:none}.engine-actions{margin-top:12px}header>span{display:none}}
+
+/* Keep the tool layout and image colours unchanged in dark mode. */
+html[data-theme=dark]{color-scheme:dark}
+html[data-theme=dark] body{background:#191c20;color:#e6e8eb}
+html[data-theme=dark] header{background:#24282e;border-color:#505761}
+html[data-theme=dark] :is(.settings-panel,.preview-panel,.introduction,dialog){background:#24282e;color:#e6e8eb;border-color:#505761}
+html[data-theme=dark] :is(button,.dropzone,.engine-download,.progress-area,.output-card,.processing-log){background:#30363d;color:#e6e8eb;border-color:#59616c}
+html[data-theme=dark] button:hover:not(:disabled){background:#424b57}
+html[data-theme=dark] :is(input:not([type=checkbox]):not([type=range]),select){background:#191d23;color:#e6e8eb;border-color:#657080}
+html[data-theme=dark] :is(.hint,.version,dt,.export-help,.output-card p,.dropzone small,header>span){color:#bdc5cf}
+html[data-theme=dark] :is(a,header nav a,dialog a,#tooltip a){color:#9dcaff}
+html[data-theme=dark] .help{background:#334964;color:#d4e7ff;border-color:#7998bc}
+html[data-theme=dark] :is(.mode-switch .active,.view-switch .active,.setup-first){background:#344a63;color:#edf4ff;border-color:#8eb6e5}
+html[data-theme=dark] .primary{background:#376394;color:#fff;border-color:#7298c3}
+html[data-theme=dark] .primary:hover:not(:disabled){background:#4777ad}
+html[data-theme=dark] #tooltip{background:#303944;color:#eff2f6;border-color:#7c8896}
+html[data-theme=dark] .notice{background:#403720;color:#ffe1a2;border-color:#9e8758}
+html[data-theme=dark] :is(.metrics,.metrics>div,.schem-output,.advanced,.actions){border-color:#535c68}
+html[data-theme=dark] .nav-disabled{color:#9ba4af}
+html[data-theme=dark] progress::-webkit-progress-bar{background:#161a20;border-color:#58616d}
+header{flex-wrap:wrap}#troubleshooting{max-height:calc(100dvh - 30px);overflow:auto}#troubleshooting h3{margin-top:18px}#troubleshooting li{font-size:12px}
+
+.metrics dd{overflow-wrap:anywhere;line-height:1.4}#conversionElapsed{white-space:nowrap;color:inherit}
+
+.comparison{margin:14px 0;overflow-x:auto}.comparison-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}.comparison-table caption{text-align:left;font-size:14px;font-weight:bold;margin-bottom:9px}.comparison-table th,.comparison-table td{border:1px solid #aaa;padding:9px 10px;text-align:left;line-height:1.5;overflow-wrap:anywhere}.comparison-table thead th{background:#e0e4e9}.comparison-table th:first-child{width:22%}.comparison-table tbody th{font-weight:normal;background:#eee}.comparison-table td:last-child{background:#eaf1f8}.comparison-table thead th:last-child{background:#d3e3f3}html[data-theme=dark] .comparison-table :is(th,td){border-color:#58616e}html[data-theme=dark] .comparison-table thead th{background:#303a47}html[data-theme=dark] .comparison-table tbody th{background:#292f37}html[data-theme=dark] .comparison-table td:last-child{background:#28394c}html[data-theme=dark] .comparison-table thead th:last-child{background:#364e69}
+
+.help-warning{position:relative;background:#fff0be;border-color:#a36b00;color:#754b00}.warning-badge{position:absolute;right:-7px;top:-7px;width:12px;height:12px;border-radius:50%;background:#b44b00;color:#fff;font:bold 10px/12px Arial;text-align:center}.help-warning:hover,.help-warning:focus-visible{background:#ffe096;border-color:#8b5700}.setting-warning{grid-column:1/-1;margin:0;padding:8px 10px;font-size:12px;line-height:1.5;border:1px solid #b98b40;background:#fff1cf;color:#684500}html[data-theme=dark] .help-warning{background:#604922;border-color:#e2ae55;color:#ffdf9d}html[data-theme=dark] .setting-warning{background:#40351f;color:#ffdfa2;border-color:#b28b4b}

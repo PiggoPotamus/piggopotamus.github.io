@@ -1,3 +1,4 @@
+import {framePlan} from './timing.js?v=20261020.18';
 // GIF89a parser and LZW decoder, including interlacing and disposal 2/3.
 // Built in so GIF conversion also works without ImageDecoder or a CDN.
 export function readGif(buffer){
@@ -37,10 +38,10 @@ export function lzw(data,min,expected){
  if(pos!==expected)throw Error('Incomplete GIF pixels');return out;
 }
 export function decodeGif(buffer,options={}){
- const info=readGif(buffer),{width,height}=info,total=info.frames.reduce((s,f)=>s+f.delay,0),interval=Math.max(50,(options.tpf||3)*50);
- const count=options.still?1:Math.min(options.maxFrames||128,Math.max(1,Math.ceil(total/interval)));
+ const info=readGif(buffer),{width,height}=info,total=info.frames.reduce((s,f)=>s+f.delay,0);
+ const plan=framePlan(total,options.tpf||3,options.maxFrames||75,options.still||info.frames.length===1),count=plan.times.length;
  options.onInfo?.({...info,count,duration:total});
- const canvas=new Uint8ClampedArray(width*height*4),output=[];let time=0,target=0;
+ const canvas=new Uint8ClampedArray(width*height*4),output=[];let time=0;
  const background=info.global&&info.background*3+2<info.global.length?[...info.global.subarray(info.background*3,info.background*3+3),255]:[0,0,0,0];
  if(info.frames[0].transparent<0)for(let p=0;p<canvas.length;p+=4)canvas.set(background,p);
  for(let fi=0;fi<info.frames.length&&output.length<count;fi++){
@@ -51,10 +52,10 @@ export function decodeGif(buffer,options={}){
    const dst=((f.y+rows[row])*width+f.x+x)*4;canvas[dst]=f.palette[c*3];canvas[dst+1]=f.palette[c*3+1];canvas[dst+2]=f.palette[c*3+2];canvas[dst+3]=255;
   }
   const stop=time+f.delay;
-  while(target<stop&&output.length<count){output.push(options.capture?options.capture(canvas,width,height):{data:canvas.slice(),width,height});target+=interval;}
+  while(output.length<count&&plan.times[output.length]<stop){output.push(options.capture?options.capture(canvas,width,height):{data:canvas.slice(),width,height});}
   if(f.disposal===2)for(let y=f.y;y<f.y+f.height;y++)for(let x=f.x;x<f.x+f.width;x++)canvas.set(f.transparent<0?background:[0,0,0,0],(y*width+x)*4);
   else if(saved)canvas.set(saved);
-  time=stop;options.progress?.(Math.min(1,time/Math.min(total,count*interval)));
+  time=stop;options.progress?.(Math.min(1,time/total));
  }
- return {frames:output,duration:total,sourceFrames:info.frames.length,clipped:total>count*interval+1};
+ return {frames:output,duration:total,sourceFrames:info.frames.length,clipped:plan.reduced,ticks:info.frames.length>1?plan.ticks:0};
 }

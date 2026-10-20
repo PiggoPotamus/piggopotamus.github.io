@@ -1,4 +1,4 @@
-import {searchPatterns} from './patterns.js?v=20261020.13';
+import {searchPatterns} from './patterns.js?v=20261020.18';
 // Native MID encoder. No runtime, package downloads, network calls or DOM.
 export const ASCII="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'()*+,-./:;<=>?@[]^`{|}~";
 export const ALPHABET=ASCII+Array.from({length:2048-ASCII.length},(_,i)=>String.fromCharCode(256+i)).join('');

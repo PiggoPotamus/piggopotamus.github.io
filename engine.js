@@ -1,16 +1,16 @@
-import {formatItem,exportFilename} from './item-format.js?v=20261020.13';
-import {createDatapack,syncRecipient} from './datapack.js?v=20261020.13';
+import {formatItem,exportFilename} from './item-format.js?v=20261020.18';
+import {createDatapack,syncRecipient} from './datapack.js?v=20261020.18';
 // Keep the supplied engine commands intact; only change the enclosing item format.
 let sourcePromise;
 export function engineItem(source,syntax){return formatItem(source,syntax);}
-async function source(){if(!sourcePromise)sourcePromise=fetch(new URL('./assets/mid-engine.give.txt?v=20261020.13',import.meta.url)).then(r=>{if(!r.ok)throw Error('The engine download could not load. Please try again.');return r.text();}).catch(error=>{sourcePromise=null;throw error;});return sourcePromise;}
+async function source(){if(!sourcePromise)sourcePromise=fetch(new URL('./assets/mid-engine.give.txt?v=20261020.18',import.meta.url)).then(r=>{if(!r.ok)throw Error('The engine download could not load. Please try again.');return r.text();}).catch(error=>{sourcePromise=null;throw error;});return sourcePromise;}
 export function initEngine(doc=document){
  const form=doc.querySelector('#engineSettings');if(!form)return;
  const save=doc.querySelector('#engineDownload'),copy=doc.querySelector('#engineCopy'),status=doc.querySelector('#engineStatus'),recipient=doc.querySelector('#engineRecipientField');let busy=false;
- function update(){syncRecipient(form,recipient);const syntax=form.elements.syntax.value;copy.hidden=syntax==='datapack';copy.textContent=syntax==='snbt'?'Copy engine SNBT':'Copy engine command';save.textContent='Download engine '+(syntax==='datapack'?'.zip':syntax==='snbt'?'.snbt':'.txt');}
+ function update(){syncRecipient(form,recipient);const syntax=form.elements.syntax.value;copy.hidden=syntax==='datapack';copy.textContent=syntax==='snbt'?'Copy SNBT':'Copy command';save.textContent='Download '+(syntax==='datapack'?'.zip':syntax==='snbt'?'.snbt':'.txt');}
  function setBusy(value){busy=value;for(const control of form.elements)if(!control.classList.contains('help'))control.disabled=value;}
  async function output(clipboard){
-  if(busy||!form.reportValidity())return;const {syntax,recipient}=Object.fromEntries(new FormData(form));setBusy(true);status.textContent='Preparing engine download…';
+  if(busy||!form.reportValidity())return;const {syntax,recipient}=Object.fromEntries(new FormData(form));setBusy(true);status.hidden=false;status.textContent='Preparing engine item…';
   try{
    const command=engineItem(await source(),syntax);
    if(clipboard)await navigator.clipboard.writeText(command);

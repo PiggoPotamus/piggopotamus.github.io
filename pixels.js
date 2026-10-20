@@ -18,3 +18,10 @@ export function resizeBicubic(data,width,height,targetWidth,targetHeight){
  for(let y=0;y<targetHeight;y++)for(let x=0;x<targetWidth;x++){let r=0,g=0,b=0,a=0;for(const [p,w]of ys[y]){const src=(p*targetWidth+x)*4;r+=horizontal[src]*w;g+=horizontal[src+1]*w;b+=horizontal[src+2]*w;a+=horizontal[src+3]*w;}const dst=(y*targetWidth+x)*4;if(a>1e-6){out[dst]=r*255/a;out[dst+1]=g*255/a;out[dst+2]=b*255/a;out[dst+3]=a;}}
  return {data:out,width:targetWidth,height:targetHeight};
 }
+
+// Requested size before applying the per-frame pixel cap.
+export function targetPixelCount(width,sourceWidth,sourceHeight){
+ if(!(width>0&&sourceWidth>0&&sourceHeight>0))return null;
+ const w=Math.max(2,Math.floor(width/2)*2),h=Math.max(2,Math.round(w*sourceHeight/sourceWidth/2)*2);
+ return {width:w,height:h,pixels:w*h};
+}
