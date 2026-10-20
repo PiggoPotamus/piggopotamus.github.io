@@ -1,3 +1,4 @@
+import {searchPatterns} from './patterns.js?v=20261020.13';
 // Native MID encoder. No runtime, package downloads, network calls or DOM.
 export const ASCII="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'()*+,-./:;<=>?@[]^`{|}~";
 export const ALPHABET=ASCII+Array.from({length:2048-ASCII.length},(_,i)=>String.fromCharCode(256+i)).join('');
@@ -24,18 +25,19 @@ export function dimensions(w,h,count,settings){
  if(width*height>cap)throw Error('Pixel limit is too small for this aspect ratio. Increase Max pixels per frame.');
  return {width,height};
 }
-export function paletteFor(frames,limit,onProgress=()=>{}){
- const hist=new Uint32Array(32768),sr=new Float64Array(32768),sg=new Float64Array(32768),sb=new Float64Array(32768);
- const stride=Math.max(1,Math.ceil(frames.reduce((s,f)=>s+f.data.length/4,0)/260000));
+export function paletteFor(frames,limit,onProgress=()=>{},options={}){
+ const bits=options.bits||5,shift=8-bits,size=1<<(bits*3);
+ const hist=new Uint32Array(size),sr=new Float64Array(size),sg=new Float64Array(size),sb=new Float64Array(size);
+ const stride=Math.max(1,Math.ceil(frames.reduce((s,f)=>s+f.data.length/4,0)/(options.samples||260000)));
  let exact=new Map(),fi=0;
- for(const f of frames){for(let i=0;i<f.data.length;i+=4*stride){if(f.data[i+3]<128)continue;const r=f.data[i],g=f.data[i+1],b=f.data[i+2],k=((r>>3)<<10)|((g>>3)<<5)|(b>>3);hist[k]++;sr[k]+=r;sg[k]+=g;sb[k]+=b;
+ for(const f of frames){for(let i=0;i<f.data.length;i+=4*stride){if(f.data[i+3]<128)continue;const r=f.data[i],g=f.data[i+1],b=f.data[i+2],k=((r>>shift)<<(bits*2))|((g>>shift)<<bits)|(b>>shift);hist[k]++;sr[k]+=r;sg[k]+=g;sb[k]+=b;
   if(exact){exact.set((r<<16)|(g<<8)|b,[r,g,b]);if(exact.size>limit)exact=null;}
  }onProgress(++fi/frames.length*.45);}
  if(exact?.size){onProgress(1);return [...exact.values()];}
  const colors=[];
  for(let k=0;k<hist.length;k++)if(hist[k])colors.push({r:sr[k]/hist[k],g:sg[k]/hist[k],b:sb[k]/hist[k],n:hist[k]});
  if(!colors.length)return [[0,0,0]];
- function box(list){let lo=[255,255,255],hi=[0,0,0],n=0;for(const c of list){n+=c.n;for(let j=0;j<3;j++){const v=c[['r','g','b'][j]];lo[j]=Math.min(lo[j],v);hi[j]=Math.max(hi[j],v);}}const ranges=hi.map((v,i)=>v-lo[i]);const axis=ranges.indexOf(Math.max(...ranges));return {list,n,axis,weight:Math.max(...ranges)*Math.sqrt(n)};}
+ function box(list){let lo=[255,255,255],hi=[0,0,0],n=0;const sums=[0,0,0],squares=[0,0,0];for(const c of list){n+=c.n;for(let j=0;j<3;j++){const v=c[['r','g','b'][j]];lo[j]=Math.min(lo[j],v);hi[j]=Math.max(hi[j],v);if(options.variance){sums[j]+=v*c.n;squares[j]+=v*v*c.n;}}}const ranges=options.variance?squares.map((v,i)=>Math.max(0,v-sums[i]*sums[i]/n)*[2,3,1][i]):hi.map((v,i)=>v-lo[i]);const axis=ranges.indexOf(Math.max(...ranges));return {list,n,axis,weight:options.variance?ranges.reduce((a,b)=>a+b,0):Math.max(...ranges)*Math.sqrt(n)};}
  const boxes=[box(colors)];
  while(boxes.length<limit){let best=-1;for(let i=0;i<boxes.length;i++)if(boxes[i].list.length>1&&(best<0||boxes[i].weight>boxes[best].weight))best=i;if(best<0)break;
   const current=boxes[best],key=['r','g','b'][current.axis];current.list.sort((a,b)=>a[key]-b[key]);let n=0,m=0;for(;m<current.list.length-1;m++){n+=current.list[m].n;if(n>=current.n/2)break;}
@@ -86,7 +88,7 @@ function tokenize(indexed,width,height,onProgress){
 }
 function packedRun(key,palette){const color=(key>>7)-1,n=(key&127)+1;return (color<0?'000000':hex(palette[color]))+ALPHABET[(color<0?128:0)+n-1];}
 function component(key,palette){const c=(key>>7)-1,n=(key&127)+1;return c<0?{text:'  '.repeat(n),bold:true}:{text:'■ '.repeat(n),color:'#'+hex(palette[c])};}
-function compactPayload(tokens,palette,patterns,onProgress){
+function compactPayload(tokens,palette,patterns,onProgress,high=false){
  const lookup=new Map(tokens.keys.map((key,i)=>[key,ALPHABET[i]]));
  const layers=tokens.layers.map(layer=>layer.map(rows=>rows.map(row=>row.map(k=>lookup.get(k)).join('')).join('_')));
  const groups=[];for(let i=0;i<tokens.keys.length;i+=8)groups.push(tokens.keys.slice(i,i+8).map(k=>packedRun(k,palette)).join(''));
@@ -110,9 +112,10 @@ function compactPayload(tokens,palette,patterns,onProgress){
    aliases[code]=expanded;replacements.set(row,code);longest=Math.max(longest,bytes(expanded));onProgress(.3+.5*Object.keys(aliases).length/32);
   }
  }
- if(!replacements.size){onProgress(1);return baseline;}
- const values=unique.map(text=>text.split('_').map(row=>replacements.get(row)||row).join('_')),out=layout(values,aliases,longest);onProgress(1);
- return bytes(snbt(baseline))<bytes(snbt(out))?baseline:out;
+ let best=baseline;
+ if(replacements.size){const values=unique.map(text=>text.split('_').map(row=>replacements.get(row)||row).join('_')),out=layout(values,aliases,longest);if(bytes(snbt(out))<bytes(snbt(best)))best=out;}
+ if(high&&patterns)best=searchPatterns(unique,tokens.keys.length,ALPHABET,layout,best,v=>onProgress(.8+v*.19),bytes,snbt);
+ onProgress(1);return best;
 }
 function fastPayload(tokens,palette,still){
  const parts=tokens.keys.map(k=>component(k,palette)),lookup=new Map(tokens.keys.map((k,i)=>[k,i+1]));
@@ -131,7 +134,7 @@ function fastPayload(tokens,palette,still){
 }
 export function encodePixels(indexed,palette,width,height,settings,onProgress=()=>{}){
  const tokens=tokenize(indexed,width,height,v=>onProgress(v*.6)),still=indexed.length===1;
- const data=settings.mode==='fast'?fastPayload(tokens,palette,still):compactPayload(tokens,palette,settings.patterns!==false,v=>onProgress(.6+v*.4));onProgress(1);
+ const data=settings.mode==='fast'?fastPayload(tokens,palette,still):compactPayload(tokens,palette,settings.patterns!==false,v=>onProgress(.6+v*.4),(settings.quality==='high'||settings.quality==='very-high'));onProgress(1);
  const strings=data.v||data.f.flat();
  for(const s of strings)if(typeof s==='string'&&bytes(s)>64000)throw Error('Frame string exceeds Minecraft’s string limit. Reduce pixel width.');
  const used=new Set();for(const key of tokens.keys){const color=(key>>7)-1;if(color>=0)used.add(palette[color].join(','));}
@@ -141,7 +144,7 @@ const encodedWire=new WeakMap();
 export function buildItem(encoded,settings,name){
  const {width,height,frames,colors}=encoded;
  const data={mid:true,c:[width,height,width/2*10+5,encoded.static?0:settings.tpf,Number(settings.billboard)||0,frames,settings.backing?1:0],s:settings.blocks*8/width,...encoded.data};
- const customName=[{color:'gold',italic:false,text:'[MID] - '},{color:'white',text:name}];
+ const customName=[{color:'gold',italic:false,text:'[MID] - '},{color:'white',text:settings.itemName?.trim()||name}];
  let wire=encodedWire.get(encoded);if(!wire){wire=snbt(encoded.data);encodedWire.set(encoded,wire);}
  const customData='{mid:1b,c:'+snbt(data.c)+',s:'+snbt(data.s)+','+wire.slice(1),nameWire=snbt(customName);
  const entity='{id:"minecraft:item_frame",Tags:["mid"],Item:{id:"minecraft:egg",count:1,components:{"minecraft:custom_name":{color:"gold",text:"Place the MID command block first!"}}},ItemDropChance:0f,Fixed:1b}';
