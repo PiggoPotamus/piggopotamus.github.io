@@ -1,4 +1,4 @@
-import {paletteFor} from './codec.js?v=20261020.18';
+import {paletteFor} from './codec.js?v=20261031.2';
 
 const weights=[2,3,1];
 export function paletteTree(palette){
@@ -49,8 +49,6 @@ export function indexHighQuality(frames,palette,dither=false,tree=paletteTree(pa
  const bayer=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
  return frames.map((f,fi)=>{const out=new Int16Array(f.width*f.height);for(let p=0,i=0;i<f.data.length;p++,i+=4){if(f.data[i+3]<128){out[p]=-1;continue;}const shift=dither?(bayer[((p/f.width|0)%4)*4+p%f.width%4]-7.5)*.5:0,r=Math.round(Math.max(0,Math.min(255,f.data[i]+shift))),g=Math.round(Math.max(0,Math.min(255,f.data[i+1]+shift))),b=Math.round(Math.max(0,Math.min(255,f.data[i+2]+shift))),key=(r<<16)|(g<<8)|b;let index=tree.cache.get(key);if(index===undefined){index=nearestColor(tree,r,g,b);if(tree.cache.size>=65536)tree.cache.clear();tree.cache.set(key,index);}out[p]=index;}onProgress((fi+1)/frames.length);return out;});
 }
-// Compare candidates at the original target resolution, so fitting a bigger
-// colour palette by throwing away spatial detail is not automatically preferred.
 export function reconstructionError(reference,indexed,palette,width,height){
  const stride=Math.max(1,Math.ceil(reference.reduce((n,f)=>n+f.width*f.height,0)/120000));let error=0,count=0;
  for(let fi=0;fi<reference.length;fi++){const f=reference[fi],pixels=indexed[fi];for(let p=0;p<f.width*f.height;p+=stride){const i=p*4,sourceAlpha=f.data[i+3]>=128?255:0,x=Math.min(width-1,Math.floor((p%f.width+.5)*width/f.width)),y=Math.min(height-1,Math.floor(((p/f.width|0)+.5)*height/f.height)),id=pixels[y*width+x],rgb=id<0?[0,0,0]:palette[id],r=rgb[0],g=rgb[1],b=rgb[2],a=id<0?0:255;
@@ -58,7 +56,6 @@ export function reconstructionError(reference,indexed,palette,width,height){
  }}return error/Math.max(1,count);
 }
 
-// Search below the requested upper limit, including intermediate small palettes.
 export function paletteCounts(cap=256,quality='medium'){
  const medium=[192,128,96,64,56,48,40,32,28,24,20,16,12,8,4,2];
  const high=[...Array.from({length:11},(_,i)=>256-i*16),88,80,72,...medium];

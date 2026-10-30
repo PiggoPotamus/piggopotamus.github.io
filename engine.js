@@ -1,9 +1,10 @@
-import {formatItem,exportFilename} from './item-format.js?v=20261020.18';
-import {createDatapack,syncRecipient} from './datapack.js?v=20261020.18';
-// Keep the supplied engine commands intact; only change the enclosing item format.
+import {copyText,saveBlob} from './downloads.js?v=20261031.2';
+import {formatItem,exportFilename} from './item-format.js?v=20261031.2';
+import {createDatapack,syncRecipient} from './datapack.js?v=20261031.2';
 let sourcePromise;
 export function engineItem(source,syntax){return formatItem(source,syntax);}
-async function source(){if(!sourcePromise)sourcePromise=fetch(new URL('./assets/mid-engine.give.txt?v=20261020.18',import.meta.url)).then(r=>{if(!r.ok)throw Error('The engine download could not load. Please try again.');return r.text();}).catch(error=>{sourcePromise=null;throw error;});return sourcePromise;}
+export function engineVersion(source){const m=/custom_name=.*?\b(V\d+(?:\.\d+)+)\b/.exec(source);return m?m[1]:null;}
+async function source(){if(!sourcePromise)sourcePromise=fetch(new URL('./assets/mid-engine.give.txt?v=20261031.2',import.meta.url)).then(r=>{if(!r.ok)throw Error('The engine download could not load. Please try again.');return r.text();}).catch(error=>{sourcePromise=null;throw error;});return sourcePromise;}
 export function initEngine(doc=document){
  const form=doc.querySelector('#engineSettings');if(!form)return;
  const save=doc.querySelector('#engineDownload'),copy=doc.querySelector('#engineCopy'),status=doc.querySelector('#engineStatus'),recipient=doc.querySelector('#engineRecipientField');let busy=false;
@@ -12,10 +13,11 @@ export function initEngine(doc=document){
  async function output(clipboard){
   if(busy||!form.reportValidity())return;const {syntax,recipient}=Object.fromEntries(new FormData(form));setBusy(true);status.hidden=false;status.textContent='Preparing engine item…';
   try{
-   const command=engineItem(await source(),syntax);
-   if(clipboard)await navigator.clipboard.writeText(command);
-   else{const blob=syntax==='datapack'?new Blob([await createDatapack([command],recipient)],{type:'application/zip'}):new Blob([command+'\n'],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),link=doc.createElement('a');link.href=url;link.download=exportFilename('MID-Engine',syntax).replace(/\.mcfunction$/,'.zip');link.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}
-   status.textContent=clipboard?'Engine copied. Import it and place it before your image items.':'Engine downloaded. Import the item and place it before your image items.';
+   const text=await source(),version=engineVersion(text),label=doc.querySelector('#engineVersion');if(version&&label)label.textContent=version;
+   const command=engineItem(text,syntax);
+   let copied=true;if(clipboard)copied=await copyText(command,'Copy the MID engine item');
+   else{const blob=syntax==='datapack'?new Blob([await createDatapack([command],recipient)],{type:'application/zip'}):new Blob([command+'\n'],{type:'text/plain;charset=utf-8'});saveBlob(blob,exportFilename('MID-Engine',syntax).replace(/\.mcfunction$/,'.zip'));}
+   status.textContent=clipboard?(copied?'Engine copied. Import it and place it before your image items.':'Use the copy window to copy the engine item.'):'Engine downloaded. Import the item and place it before your image items.';
   }catch(error){status.textContent=error.message||'Could not export the engine. Try downloading instead of copying.';}
   finally{setBusy(false);update();}
  }

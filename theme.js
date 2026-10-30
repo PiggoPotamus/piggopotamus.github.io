@@ -1,4 +1,3 @@
-// Apply before paint; share the preference between converter pages.
 (()=>{
  const key='piggo-theme';let dark=true;
  try{dark=localStorage.getItem(key)!=='light';}catch{}

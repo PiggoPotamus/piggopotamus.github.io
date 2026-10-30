@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 import schem_to_commands as core
 
-# Selection gaps must remain untouched even when Include air is enabled.
 UNSELECTED = '__unselected__'
 MAX_VOLUME = 8_000_000
 legacy_states = None
@@ -103,7 +102,6 @@ def load_litematic(root, progress=None):
             x, z, y = i % size[0], (i // size[0]) % size[2], i // (size[0] * size[2])
             destination = (ox + x) + (oz + z) * width + (oy + y) * width * length
             blocks[destination] = palette[index]
-            # A later region replaces an earlier region, including any old tile data.
             tiles.pop(destination, None)
         for value in list_values(region.get('TileEntities'), name + '.TileEntities'):
             raw = core.compound(value, 'TileEntity')

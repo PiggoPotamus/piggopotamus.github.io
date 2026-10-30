@@ -1,4 +1,3 @@
-// Explicit nearest-neighbour sampling: never average neighbouring colours.
 export function resizeNearest(data,width,height,targetWidth,targetHeight){
  const out=new Uint8ClampedArray(targetWidth*targetHeight*4),xs=new Int32Array(targetWidth);
  for(let x=0;x<targetWidth;x++)xs[x]=Math.min(width-1,Math.floor((x+.5)*width/targetWidth))*4;
@@ -8,8 +7,6 @@ export function resizeNearest(data,width,height,targetWidth,targetHeight){
 
 function cubic(x){x=Math.abs(x);return x<1?1.5*x*x*x-2.5*x*x+1:x<2?-.5*x*x*x+2.5*x*x-4*x+2:0;}
 function contributions(source,target){const scale=Math.max(1,source/target),radius=2*scale;return Array.from({length:target},(_,i)=>{const center=(i+.5)*source/target-.5,points=[];let sum=0;for(let p=Math.ceil(center-radius);p<=Math.floor(center+radius);p++){const weight=cubic((p-center)/scale);if(weight){points.push([Math.max(0,Math.min(source-1,p)),weight]);sum+=weight;}}return points.map(([p,w])=>[p,w/sum]);});}
-// Antialiased bicubic filtering with premultiplied alpha. Work is separable,
-// and the kernel widens when downscaling instead of aliasing fine detail.
 export function resizeBicubic(data,width,height,targetWidth,targetHeight){
  if(width===targetWidth&&height===targetHeight)return {data:new Uint8ClampedArray(data),width,height};
  const xs=contributions(width,targetWidth),ys=contributions(height,targetHeight),horizontal=new Float32Array(targetWidth*height*4);
@@ -19,7 +16,6 @@ export function resizeBicubic(data,width,height,targetWidth,targetHeight){
  return {data:out,width:targetWidth,height:targetHeight};
 }
 
-// Requested size before applying the per-frame pixel cap.
 export function targetPixelCount(width,sourceWidth,sourceHeight){
  if(!(width>0&&sourceWidth>0&&sourceHeight>0))return null;
  const w=Math.max(2,Math.floor(width/2)*2),h=Math.max(2,Math.round(w*sourceHeight/sourceWidth/2)*2);

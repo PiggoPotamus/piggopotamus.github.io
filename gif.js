@@ -1,6 +1,4 @@
-import {framePlan} from './timing.js?v=20261020.18';
-// GIF89a parser and LZW decoder, including interlacing and disposal 2/3.
-// Built in so GIF conversion also works without ImageDecoder or a CDN.
+import {framePlan} from './timing.js?v=20261031.2';
 export function readGif(buffer){
  const b=new Uint8Array(buffer);let p=0;
  const read=()=>{if(p>=b.length)throw Error('Truncated GIF');return b[p++];};
@@ -39,7 +37,7 @@ export function lzw(data,min,expected){
 }
 export function decodeGif(buffer,options={}){
  const info=readGif(buffer),{width,height}=info,total=info.frames.reduce((s,f)=>s+f.delay,0);
- const plan=framePlan(total,options.tpf||3,options.maxFrames||75,options.still||info.frames.length===1),count=plan.times.length;
+ const plan=framePlan(total,options.tpf||3,options.maxFrames||75,options.still||info.frames.length===1,options.capMode),count=plan.times.length;
  options.onInfo?.({...info,count,duration:total});
  const canvas=new Uint8ClampedArray(width*height*4),output=[];let time=0;
  const background=info.global&&info.background*3+2<info.global.length?[...info.global.subarray(info.background*3,info.background*3+3),255]:[0,0,0,0];
