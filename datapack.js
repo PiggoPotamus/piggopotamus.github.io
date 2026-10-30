@@ -1,4 +1,4 @@
-import {digest256} from './hash.js?v=20261031.2';
+import {digest256} from './hash.js?v=20261031.3';
 const encoder=new TextEncoder();
 const crcTable=Uint32Array.from({length:256},(_,n)=>{for(let i=0;i<8;i++)n=n&1?0xedb88320^(n>>>1):n>>>1;return n>>>0;});
 function crc32(bytes){let crc=0xffffffff;for(const n of bytes)crc=crcTable[(crc^n)&255]^(crc>>>8);return (crc^0xffffffff)>>>0;}

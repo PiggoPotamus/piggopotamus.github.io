@@ -1,7 +1,7 @@
-import {copyText,saveBlob} from './downloads.js?v=20261031.2';
-import {createDatapack,syncRecipient} from './datapack.js?v=20261031.2';
-import {exportFilename,exportExtension,formatItem} from './item-format.js?v=20261031.2';
-import {argsFor} from './schematic-options.js?v=20261031.2';
+import {copyText,saveBlob} from './downloads.js?v=20261031.3';
+import {createDatapack,syncRecipient} from './datapack.js?v=20261031.3';
+import {exportFilename,exportExtension,formatItem} from './item-format.js?v=20261031.3';
+import {argsFor} from './schematic-options.js?v=20261031.3';
 const $=s=>document.querySelector(s),form=$('#schemSettings');
 let file=null,worker=null,busy=false,files=[],floor=0,started=0,elapsedTimer=null;
 function progress(value,message){floor=Math.max(floor,value);$('#schemProgress').value=floor;$('#schemPercent').textContent=Math.round(floor*100)+'%';$('#schemStatus').textContent=message;}
@@ -29,7 +29,7 @@ function showFiles(){
   const save=document.createElement('button');save.textContent='Download '+output.name.slice(output.name.lastIndexOf('.'));save.onclick=()=>download(output);row.append(label,copy,save);$('#schemFiles').append(row);
  }
 }
-function getWorker(){if(worker)return worker;worker=new Worker(new URL('./schematic-worker.js?v=20261031.2',import.meta.url),{type:'module'});worker.onmessage=({data})=>{if(data.type==='progress')progress(data.value,data.message);else if(data.type==='log'){const log=$('#schemLog');log.textContent=(log.textContent+'\n'+data.text).slice(-60000);log.scrollTop=log.scrollHeight;}else if(data.type==='notice')notify(data.text);else if(data.type==='warn')overLimit=data.text;else if(data.type==='done'){notify(overLimit);files=data.files;progress(1,'Complete.');setBusy(false);showFiles();}else if(data.type==='error'){error(data.message);progress(floor,'Failed.');setBusy(false);}};worker.onerror=()=>{error('The conversion tools could not load. Check your connection and try again.');progress(floor,'Failed.');setBusy(false);worker?.terminate();worker=null;};return worker;}
+function getWorker(){if(worker)return worker;worker=new Worker(new URL('./schematic-worker.js?v=20261031.3',import.meta.url),{type:'module'});worker.onmessage=({data})=>{if(data.type==='progress')progress(data.value,data.message);else if(data.type==='log'){const log=$('#schemLog');log.textContent=(log.textContent+'\n'+data.text).slice(-60000);log.scrollTop=log.scrollHeight;}else if(data.type==='notice')notify(data.text);else if(data.type==='warn')overLimit=data.text;else if(data.type==='done'){notify(overLimit);files=data.files;progress(1,'Complete.');setBusy(false);showFiles();}else if(data.type==='error'){error(data.message);progress(floor,'Failed.');setBusy(false);}};worker.onerror=()=>{error('The conversion tools could not load. Check your connection and try again.');progress(floor,'Failed.');setBusy(false);worker?.terminate();worker=null;};return worker;}
 $('#schemDrop').onclick=()=>$('#schemFile').click();$('#schemFile').onchange=e=>{choose(e.target.files[0]);e.target.value='';};$('#schemDrop').ondragover=e=>e.preventDefault();$('#schemDrop').ondrop=e=>{e.preventDefault();choose(e.dataTransfer.files[0]);};
 function sizeWarning(){$('#schemSizeWarn').hidden=!(Number(form.elements.maxSizeKB.value)>8100);}
 form.onsubmit=e=>e.preventDefault();form.oninput=e=>{

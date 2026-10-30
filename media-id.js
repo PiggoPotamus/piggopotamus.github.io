@@ -1,4 +1,4 @@
-import {digest256} from './hash.js?v=20261031.2';
+import {digest256} from './hash.js?v=20261031.3';
 
 export async function mediaId(frames,width,height){
  const header=new TextEncoder().encode(`MID-pixels-v2:${width}:${height}:${frames.length}:`);

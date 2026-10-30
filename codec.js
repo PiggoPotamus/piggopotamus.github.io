@@ -1,5 +1,5 @@
-import {encodeMidp,encodeBest} from './midp-codec.js?v=20261031.2';
-import {nbtSize,nbtWeight} from './numeric-codec.js?v=20261031.2';
+import {encodeMidp,encodeBest} from './midp-codec.js?v=20261031.3';
+import {nbtSize,nbtWeight} from './numeric-codec.js?v=20261031.3';
 const utf8=new TextEncoder();
 export const bytes=s=>utf8.encode(s).length;
 export function snbt(v){

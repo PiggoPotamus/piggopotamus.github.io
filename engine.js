@@ -1,10 +1,10 @@
-import {copyText,saveBlob} from './downloads.js?v=20261031.2';
-import {formatItem,exportFilename} from './item-format.js?v=20261031.2';
-import {createDatapack,syncRecipient} from './datapack.js?v=20261031.2';
+import {copyText,saveBlob} from './downloads.js?v=20261031.3';
+import {formatItem,exportFilename} from './item-format.js?v=20261031.3';
+import {createDatapack,syncRecipient} from './datapack.js?v=20261031.3';
 let sourcePromise;
 export function engineItem(source,syntax){return formatItem(source,syntax);}
 export function engineVersion(source){const m=/custom_name=.*?\b(V\d+(?:\.\d+)+)\b/.exec(source);return m?m[1]:null;}
-async function source(){if(!sourcePromise)sourcePromise=fetch(new URL('./assets/mid-engine.give.txt?v=20261031.2',import.meta.url)).then(r=>{if(!r.ok)throw Error('The engine download could not load. Please try again.');return r.text();}).catch(error=>{sourcePromise=null;throw error;});return sourcePromise;}
+async function source(){if(!sourcePromise)sourcePromise=fetch(new URL('./assets/mid-engine.give.txt?v=20261031.3',import.meta.url)).then(r=>{if(!r.ok)throw Error('The engine download could not load. Please try again.');return r.text();}).catch(error=>{sourcePromise=null;throw error;});return sourcePromise;}
 export function initEngine(doc=document){
  const form=doc.querySelector('#engineSettings');if(!form)return;
  const save=doc.querySelector('#engineDownload'),copy=doc.querySelector('#engineCopy'),status=doc.querySelector('#engineStatus'),recipient=doc.querySelector('#engineRecipientField');let busy=false;
