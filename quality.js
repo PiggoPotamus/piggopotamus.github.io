@@ -1,4 +1,4 @@
-import {paletteFor} from './codec.js?v=20261031.3';
+import {paletteFor} from './codec.js?v=20261031.4';
 
 const weights=[2,3,1];
 export function paletteTree(palette){

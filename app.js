@@ -1,9 +1,9 @@
-import {copyText,saveBlob} from './downloads.js?v=20261031.3';
-import {framePlan,frameCapActive} from './timing.js?v=20261031.3';
-import {createDatapack,syncRecipient} from './datapack.js?v=20261031.3';
-import {exportFilename} from './item-format.js?v=20261031.3';
-import {targetPixelCount,resizeNearest,resizeBicubic} from './pixels.js?v=20261031.3';
-import {dimensions,pixelLimit} from './codec.js?v=20261031.3';
+import {copyText,saveBlob} from './downloads.js?v=20261031.4';
+import {framePlan,frameCapActive} from './timing.js?v=20261031.4';
+import {createDatapack,syncRecipient} from './datapack.js?v=20261031.4';
+import {exportFilename} from './item-format.js?v=20261031.4';
+import {targetPixelCount,resizeNearest,resizeBicubic} from './pixels.js?v=20261031.4';
+import {dimensions,pixelLimit} from './codec.js?v=20261031.4';
 const $=s=>document.querySelector(s),form=$('#settings');
 let file=null,worker=null,busy=false,result=null,command='',processed=[],frame=0,playing=false,lastFrame=0,source=null,sourceURL='',view='source',zoom=1,generation=0,controller=null,signature='',adjustTimer=null,adjustSeq=0,conversionStarted=0,progressFloor=0,cachedMediaKey='',conversionKey='',animationHandle=0,elapsedTimer=null;
 let previewWorker=null,sourceInfo=null;
@@ -19,7 +19,7 @@ function resetOutput(){if(animationHandle)cancelAnimationFrame(animationHandle);
 function stopSourceInfo(){previewWorker?.terminate();previewWorker=null;}
 function countSourceColours(chosen){
  stopSourceInfo();sourceInfo=null;$('#sourceInfo').textContent='Reading source details…';updateSourceDetails();$('#sourceColours').textContent='…';
- const current=generation;try{previewWorker=new Worker(new URL('./source-info.js?v=20261031.3',import.meta.url),{type:'module'});
+ const current=generation;try{previewWorker=new Worker(new URL('./source-info.js?v=20261031.4',import.meta.url),{type:'module'});
  previewWorker.onmessage=({data})=>{if(current!==generation)return;sourceInfo=data;if(data.error)$('#sourceInfo').textContent='Source details unavailable.';updateSourceDetails();stopSourceInfo();};
  previewWorker.onerror=()=>{if(current!==generation)return;$('#sourceInfo').textContent='Source colour count unavailable.';stopSourceInfo();};previewWorker.postMessage({file:chosen});}catch{$('#sourceInfo').textContent='Source colour count unavailable.';stopSourceInfo();}
 }
@@ -100,7 +100,7 @@ async function captureVideo(f,s,signal){
 }
 function getWorker(){
  if(worker)return worker;
- const current=generation;worker=new Worker(new URL('./worker.js?v=20261031.3',import.meta.url),{type:'module'});
+ const current=generation;worker=new Worker(new URL('./worker.js?v=20261031.4',import.meta.url),{type:'module'});
  worker.onmessage=({data})=>{
   if(current!==generation)return;
   if(data.type==='warning'){notice(data.message);return;}
@@ -161,6 +161,6 @@ $('#download').onclick=async()=>{
 };
 $('#resetSettings').onclick=()=>{if(busy)return;form.reset();try{localStorage.removeItem('mid-native-settings-v3');}catch{}edited();if(!result)status('Default settings restored.',file?'Press Convert when ready.':'Choose a file to begin.');};
 $('#help').onclick=()=>$('#guide').showModal();$('#closeGuide').onclick=()=>$('#guide').close();$('#guide').onclick=e=>{if(e.target===$('#guide')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}};
-$('#sample').onclick=async()=>{const r=await fetch('./assets/sample.gif?v=20261031.3');if(!r.ok){notice('The sample image could not be loaded.');return;}selectFile(new File([await r.blob()],'sample.gif',{type:'image/gif'}));};
+$('#sample').onclick=async()=>{const r=await fetch('./assets/sample.gif?v=20261031.4');if(!r.ok){notice('The sample image could not be loaded.');return;}selectFile(new File([await r.blob()],'sample.gif',{type:'image/gif'}));};
 try{const saved=JSON.parse(localStorage.getItem('mid-native-settings-v3')||'null');if(saved){for(const e of form.elements){if(!e.name)continue;if(e.type==='checkbox')e.checked=saved[e.name]==='on';else if(saved[e.name]!==undefined)e.value=saved[e.name];}}}catch{}
 syncRecipient(form,$('#recipientField'));updateFrameCapWarning();new ResizeObserver(draw).observe($('#stage'));document.addEventListener('visibilitychange',()=>{if(document.hidden)$('#sourceVideo').pause();lastFrame=performance.now();scheduleAnimation();});window.addEventListener('beforeunload',()=>{terminate();releaseVideo();if(sourceURL)URL.revokeObjectURL(sourceURL);});draw();
