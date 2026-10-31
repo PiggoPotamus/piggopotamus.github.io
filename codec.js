@@ -1,5 +1,5 @@
-import {encodeMidp,encodeBest} from './midp-codec.js?v=20261031.4';
-import {nbtSize,nbtWeight} from './numeric-codec.js?v=20261031.4';
+import {encodeMidp,encodeBest} from './midp-codec.js?v=20261031.8';
+import {nbtSize,nbtWeight} from './numeric-codec.js?v=20261031.8';
 const utf8=new TextEncoder();
 export const bytes=s=>utf8.encode(s).length;
 export function snbt(v){
@@ -98,7 +98,7 @@ export function buildItem(encoded,settings,name){
  const components=[['minecraft:entity_data',entity],['minecraft:custom_data','{mid:1b}'],['minecraft:custom_name',nameWire]];
  const stack=settings.syntax==='snbt';
  const prefix=stack?'{components:{'+components.map(([k,v])=>JSON.stringify(k)+':'+v).join(',')+',"minecraft:lore":':(settings.syntax==='vanilla'?'give @p ':settings.syntax==='datapack'?'give @s ':'.give ' )+'minecraft:item_frame['+components.map(([k,v])=>k+'='+v).join(',')+',minecraft:lore=';
- let command='';let size=0,commandSize=0;
+ let command='';let size=0,commandSize=0,stack2;
  for(let pass=0;pass<3;pass++){
   const lore=[
    {color:'aqua',italic:false,text:`${width}x${height} | ${encoded.static?'Image':frames+'-frame GIF'} | ${colors} colors${encoded.static?'':' | '+settings.tpf+' tpf'} | ${(size/1000).toFixed(1)} KB`},
@@ -109,8 +109,8 @@ export function buildItem(encoded,settings,name){
   ];
   command=prefix+snbt(lore)+(stack?',"minecraft:enchantment_glint_override":1b},id:"minecraft:item_frame",count:1}':',minecraft:enchantment_glint_override=true] 1');commandSize=bytes(command+'\n');
   const entityValue={id:'minecraft:item_frame',Tags:['mid'],data,Item:{id:'minecraft:egg',count:1,components:{'minecraft:custom_name':{color:'gold',text:'Place the MID command block first!'}}},ItemDropChance:0,Fixed:true};
-  size=nbtSize({id:'minecraft:item_frame',count:1,components:{'minecraft:entity_data':entityValue,'minecraft:custom_data':{mid:true},'minecraft:custom_name':customName,'minecraft:lore':lore,'minecraft:enchantment_glint_override':true}});
+  stack2={id:'minecraft:item_frame',count:1,components:{'minecraft:entity_data':entityValue,'minecraft:custom_data':{mid:true},'minecraft:custom_name':customName,'minecraft:lore':lore,'minecraft:enchantment_glint_override':true}};
+  size=nbtSize(stack2);
  }
- const entityValue={id:'minecraft:item_frame',Tags:['mid'],data,Item:{id:'minecraft:egg',count:1},ItemDropChance:0,Fixed:true};
- return {command,bytes:size,commandBytes:commandSize,payload:data,weight:nbtWeight(entityValue)};
+ return {command,bytes:size,commandBytes:commandSize,payload:data,weight:nbtWeight(stack2)};
 }

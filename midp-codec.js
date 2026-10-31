@@ -1,5 +1,5 @@
-import {tokenize} from './codec.js?v=20261031.4';
-import {B,I,nbtSize,values} from './numeric-codec.js?v=20261031.4';
+import {tokenize} from './codec.js?v=20261031.8';
+import {B,I,nbtSize,values} from './numeric-codec.js?v=20261031.8';
 
 export const MAX_TEXT=64000; // translate strings stay under NBT's 65535-byte string limit
 export const PREFIX_TIERS=[5,10,20],NARROW=255,SUFFIX0=156;

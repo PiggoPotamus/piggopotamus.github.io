@@ -1,4 +1,4 @@
-import {framePlan} from './timing.js?v=20261031.4';
+import {framePlan} from './timing.js?v=20261031.8';
 export function readGif(buffer){
  const b=new Uint8Array(buffer);let p=0;
  const read=()=>{if(p>=b.length)throw Error('Truncated GIF');return b[p++];};

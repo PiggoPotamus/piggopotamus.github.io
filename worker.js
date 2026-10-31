@@ -1,10 +1,10 @@
-import {mediaId} from './media-id.js?v=20261031.4';
-import {framePlan,grayscaleFrames} from './timing.js?v=20261031.4';
-import {resizeNearest,resizeBicubic} from './pixels.js?v=20261031.4';
-import {paletteCounts,mediumQualityPalette,highQualityPalette,indexHighQuality,paletteTree,reconstructionError} from './quality.js?v=20261031.4';
-import {dimensions,paletteFor,raster,encodePixels,buildItem} from './codec.js?v=20261031.4';
-import {NBT_QUOTA} from './numeric-codec.js?v=20261031.4';
-import {decodeGif} from './gif.js?v=20261031.4';
+import {mediaId} from './media-id.js?v=20261031.8';
+import {framePlan,grayscaleFrames} from './timing.js?v=20261031.8';
+import {resizeNearest,resizeBicubic} from './pixels.js?v=20261031.8';
+import {paletteCounts,mediumQualityPalette,highQualityPalette,indexHighQuality,paletteTree,reconstructionError} from './quality.js?v=20261031.8';
+import {dimensions,paletteFor,raster,encodePixels,buildItem} from './codec.js?v=20261031.8';
+import {NBT_QUOTA,ITEM_LIMIT} from './numeric-codec.js?v=20261031.8';
+import {decodeGif} from './gif.js?v=20261031.8';
 let lastProgress=0;
 const say=(value,message,force=false)=>{const now=performance.now();if(force||now-lastProgress>=33){lastProgress=now;postMessage({type:'progress',value,message});}};
 let last=null,decodedCache=null;
@@ -53,7 +53,7 @@ async function decodeImage(file,settings){
  try{return {frames:[captureImage(bitmap,bitmap.width,bitmap.height,settings,1)],duration:0,sourceFrames:1,clipped:false};}finally{bitmap.close();}
 }
 let memoryNoted=false,weightLimited=false;
-const WEIGHT_LIMIT=Math.floor(NBT_QUOTA*.95);
+const weightLimit=settings=>Number.isFinite(settings.budget)&&settings.budget>ITEM_LIMIT?Infinity:ITEM_LIMIT;
 function checkMemory(width,height,count){if(width*height*count>32000000&&!memoryNoted){memoryNoted=true;postMessage({type:'warning',message:'Large conversion: continuing. Your browser may use substantial memory; Cancel remains available.'});}}
 function rememberRaster(cache,key,value){const pixels=value.reduce((s,f)=>s+f.length,0);if(pixels>8000000)return;cache.rasters.set(key,value);let total=[...cache.rasters.values()].reduce((sum,frames)=>sum+frames.reduce((s,f)=>s+f.length,0),0);while(total>8000000||cache.rasters.size>3){const oldest=cache.rasters.keys().next().value;total-=cache.rasters.get(oldest).reduce((s,f)=>s+f.length,0);cache.rasters.delete(oldest);}}
 function fitQuality(base,settings,name,scale){
@@ -101,7 +101,7 @@ function fitQuality(base,settings,name,scale){
    const {palette,lookup}=p,key=JSON.stringify([pk,settings.dither]);let indexed=decodedCache.rasters.get(key);
    if(!indexed){indexed=indexHighQuality(frames,palette,settings.dither==='ordered',lookup);rememberRaster(decodedCache,key,indexed);}
    try{const encoded=encodePixels(indexed,palette,width,height),item=buildItem(encoded,settings,name);smallest=Math.min(smallest,item.bytes);if(item.bytes>settings.budget)return null;
-    if(item.weight>WEIGHT_LIMIT){weightLimited=true;textRatio=Math.min(textRatio,WEIGHT_LIMIT/item.weight);return null;}
+    const limit=weightLimit(settings);if(item.weight>limit){weightLimited=true;textRatio=Math.min(textRatio,limit/item.weight);return null;}
     if(settings.exactColors&&encoded.colors>cap)return {over:true};
     const error=reconstructionError(base,indexed,palette,width,height),candidate={encoded,item,palette,error,indexed};
     const closer=settings.exactColors&&best&&encoded.colors!==best.encoded.colors;
@@ -115,7 +115,7 @@ self.onmessage=async({data})=>{
   if(data.type==='adjust'){
    if(!last)throw Error('Convert media first');
    const item=buildItem(last.encoded,data.settings,last.name);
-   if(item.bytes>data.settings.budget||item.weight>WEIGHT_LIMIT)throw Error('New placement settings exceed the item budget. Convert again.');
+   if(item.bytes>data.settings.budget||item.weight>weightLimit(data.settings))throw Error('New placement settings exceed the item budget. Convert again.');
    postMessage({type:'adjusted',request:data.request,command:item.command,bytes:item.bytes,commandBytes:item.commandBytes});return;
   }
   if(data.type!=='convert')return;
@@ -135,13 +135,13 @@ self.onmessage=async({data})=>{
   if(final){width=final.encoded.width;height=final.encoded.height;}
   if(!final)throw Error('Cannot fit this media into the item budget. Raise the budget or reduce the frame cap.');
   {say(.92,'Optimising item',true);const best=encodePixels(final.indexed,final.palette,width,height,true),item=buildItem(best,settings,data.name);
-   if(item.weight<=WEIGHT_LIMIT&&item.bytes<=settings.budget)final.encoded=best;}
+   if(item.weight<=weightLimit(settings)&&item.bytes<=settings.budget)final.encoded=best;}
   say(.94,'Preparing preview',true);
   const previews=final.indexed.map((f,i)=>{const out=raster(f,final.palette,width,height);say(.94+.05*(i+1)/final.indexed.length,'Preparing preview');return out;});
   final.encoded.id=await mediaId(previews,width,height);
   final.item=buildItem(final.encoded,settings,data.name);
   last={encoded:final.encoded,name:data.name};
-  const result={width,height,frames:previews.length,colors:final.encoded.colors,bytes:final.item.bytes,entries:final.encoded.entries,entities:4*previews.length,elapsed:performance.now()-started,sourceDuration:media.duration,commandBytes:final.item.commandBytes,quality:settings.quality||'medium',tpf:settings.tpf,ticks:(media.sourceFrames===1||media.frames.length===1&&!media.duration)?0:previews.length*settings.tpf,clipped:media.clipped,sourceFrames:media.sourceFrames,cacheKey:data.cacheKey,oversize:!!final.encoded.oversize,weightLimited,exactColors:settings.exactColors?settings.colors||256:0};
+  const result={width,height,frames:previews.length,colors:final.encoded.colors,bytes:final.item.bytes,entries:final.encoded.entries,entities:4*previews.length,elapsed:performance.now()-started,sourceDuration:media.duration,commandBytes:final.item.commandBytes,quality:settings.quality||'medium',tpf:settings.tpf,ticks:(media.sourceFrames===1||media.frames.length===1&&!media.duration)?0:previews.length*settings.tpf,clipped:media.clipped,sourceFrames:media.sourceFrames,cacheKey:data.cacheKey,oversize:!!final.encoded.oversize,weightLimited,overQuota:final.item.weight>NBT_QUOTA,exactColors:settings.exactColors?settings.colors||256:0};
   postMessage({type:'done',result,command:final.item.command,previews:previews.map(f=>({...f,data:f.data.buffer}))},previews.map(f=>f.data.buffer));
  }catch(error){postMessage({type:'error',request:data.request,message:error instanceof RangeError?'Your browser could not allocate enough memory to finish. Try fewer pixels or frames, or close other tabs.':error.message||String(error)});}
 };

@@ -1,4 +1,4 @@
-import {bytes} from './codec.js?v=20261031.4';
+import {bytes} from './codec.js?v=20261031.8';
 export const B=a=>({$b:a}), S=a=>({$s:a}), I=a=>({$i:a});
 export const values=v=>v?.$b??v?.$s??v?.$i;
 export function nbtSize(v){
@@ -17,6 +17,7 @@ export function nbtSize(v){
  throw Error('Unsupported NBT value');
 }
 export const NBT_QUOTA=2097152;
+export const ITEM_LIMIT=Math.floor(NBT_QUOTA*.99);
 const str=s=>36+2*s.length;
 export function nbtWeight(v){
  if(v?.$b)return 24+v.$b.length;
@@ -26,6 +27,6 @@ export function nbtWeight(v){
  if(typeof v==='number')return Number.isInteger(v)?12:16;
  if(typeof v==='string')return str(v);
  if(Array.isArray(v))return 36+v.reduce((n,x)=>n+4+nbtWeight(x),0);
- if(v&&typeof v==='object')return 48+Object.entries(v).reduce((n,[k,x])=>n+32+str(k)+nbtWeight(x),0);
+ if(v&&typeof v==='object')return 48+Object.entries(v).reduce((n,[k,x])=>n+28+str(k)+nbtWeight(x),0);
  throw Error('Unsupported NBT value');
 }

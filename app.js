@@ -1,14 +1,15 @@
-import {copyText,saveBlob} from './downloads.js?v=20261031.4';
-import {framePlan,frameCapActive} from './timing.js?v=20261031.4';
-import {createDatapack,syncRecipient} from './datapack.js?v=20261031.4';
-import {exportFilename} from './item-format.js?v=20261031.4';
-import {targetPixelCount,resizeNearest,resizeBicubic} from './pixels.js?v=20261031.4';
-import {dimensions,pixelLimit} from './codec.js?v=20261031.4';
+import {ITEM_LIMIT} from './numeric-codec.js?v=20261031.8';
+import {copyText,saveBlob} from './downloads.js?v=20261031.8';
+import {framePlan,frameCapActive} from './timing.js?v=20261031.8';
+import {createDatapack,syncRecipient} from './datapack.js?v=20261031.8';
+import {exportFilename} from './item-format.js?v=20261031.8';
+import {targetPixelCount,resizeNearest,resizeBicubic} from './pixels.js?v=20261031.8';
+import {dimensions,pixelLimit} from './codec.js?v=20261031.8';
 const $=s=>document.querySelector(s),form=$('#settings');
 let file=null,worker=null,busy=false,result=null,command='',processed=[],frame=0,playing=false,lastFrame=0,source=null,sourceURL='',view='source',zoom=1,generation=0,controller=null,signature='',adjustTimer=null,adjustSeq=0,conversionStarted=0,progressFloor=0,cachedMediaKey='',conversionKey='',animationHandle=0,elapsedTimer=null;
 let previewWorker=null,sourceInfo=null;
 const placement=new Set(['blocks','billboard','backing','syntax','itemName']);
-function settings(){const d=new FormData(form);return {grayscale:d.has('grayscale'),itemName:(d.get('itemName')||'').trim(),quality:d.get('quality')||'medium',colors:Number(d.get('colors'))||0,exactColors:d.has('exactColors'),budget:Number(d.get('budgetKB'))*1000,tpf:Number(d.get('tpf')),still:false,width:Number(d.get('width'))||0,maxFrames:Number(d.get('maxFrames')),capMode:d.get('capMode')||'spread',dither:d.get('dither'),filter:d.get('filter'),maxPixels:Number(d.get('maxPixels')),patterns:true,blocks:Number(d.get('blocks')),billboard:Number(d.get('billboard')),backing:d.has('backing'),syntax:d.get('syntax')};}
+function settings(){const d=new FormData(form);return {grayscale:d.has('grayscale'),itemName:(d.get('itemName')||'').trim(),quality:d.get('quality')||'medium',colors:Number(d.get('colors'))||0,exactColors:d.has('exactColors'),budget:d.get('budgetKB')?Number(d.get('budgetKB'))*1000:Infinity,tpf:Number(d.get('tpf')),still:false,width:Number(d.get('width'))||0,maxFrames:Number(d.get('maxFrames')),capMode:d.get('capMode')||'spread',dither:d.get('dither'),filter:d.get('filter'),maxPixels:Number(d.get('maxPixels')),patterns:true,blocks:Number(d.get('blocks')),billboard:Number(d.get('billboard')),backing:d.has('backing'),syntax:d.get('syntax')};}
 function mediaKey(s){return JSON.stringify([file.name,file.size,file.lastModified,s.tpf,s.still,s.width,s.maxFrames,s.capMode,s.filter,s.maxPixels,s.quality,s.grayscale]);}
 function notice(message){$('#notice').hidden=!message;$('#notice').textContent=message;}
 function status(title,detail){$('#status').textContent=title;$('#statusDetail').textContent=detail;}
@@ -19,13 +20,14 @@ function resetOutput(){if(animationHandle)cancelAnimationFrame(animationHandle);
 function stopSourceInfo(){previewWorker?.terminate();previewWorker=null;}
 function countSourceColours(chosen){
  stopSourceInfo();sourceInfo=null;$('#sourceInfo').textContent='Reading source details…';updateSourceDetails();$('#sourceColours').textContent='…';
- const current=generation;try{previewWorker=new Worker(new URL('./source-info.js?v=20261031.4',import.meta.url),{type:'module'});
+ const current=generation;try{previewWorker=new Worker(new URL('./source-info.js?v=20261031.8',import.meta.url),{type:'module'});
  previewWorker.onmessage=({data})=>{if(current!==generation)return;sourceInfo=data;if(data.error)$('#sourceInfo').textContent='Source details unavailable.';updateSourceDetails();stopSourceInfo();};
  previewWorker.onerror=()=>{if(current!==generation)return;$('#sourceInfo').textContent='Source colour count unavailable.';stopSourceInfo();};previewWorker.postMessage({file:chosen});}catch{$('#sourceInfo').textContent='Source colour count unavailable.';stopSourceInfo();}
 }
 function durationText(ms){return (ms/1000).toFixed(2).replace(/0+$/,'').replace(/\.$/,'')+' s';}
 function updateWidthWarning(){
- const s=settings(),info=sourceInfo&&!sourceInfo.error?sourceInfo:null,w=info?.width||source?.videoWidth||source?.naturalWidth,h=info?.height||source?.videoHeight||source?.naturalHeight,request=targetPixelCount(s.width,w,h),warning=$('#widthWarning'),limit=pixelLimit(s.maxPixels);
+ const s=settings(),big=$('#budgetWarning');big.hidden=!(s.budget>ITEM_LIMIT&&s.budget<Infinity);
+ const info=sourceInfo&&!sourceInfo.error?sourceInfo:null,w=info?.width||source?.videoWidth||source?.naturalWidth,h=info?.height||source?.videoHeight||source?.naturalHeight,request=targetPixelCount(s.width,w,h),warning=$('#widthWarning'),limit=pixelLimit(s.maxPixels);
  warning.hidden=!request||request.pixels<=limit;
  warning.textContent=warning.hidden?'':`⚠ Target width implies ${request.width} × ${request.height} (${request.pixels.toLocaleString()} pixels per frame), exceeding your ${limit.toLocaleString()} pixel limit. The output will be made smaller. Lower Target width or increase Max pixels per frame.`;
 }
@@ -100,7 +102,7 @@ async function captureVideo(f,s,signal){
 }
 function getWorker(){
  if(worker)return worker;
- const current=generation;worker=new Worker(new URL('./worker.js?v=20261031.4',import.meta.url),{type:'module'});
+ const current=generation;worker=new Worker(new URL('./worker.js?v=20261031.8',import.meta.url),{type:'module'});
  worker.onmessage=({data})=>{
   if(current!==generation)return;
   if(data.type==='warning'){notice(data.message);return;}
@@ -118,7 +120,7 @@ function getWorker(){
    $('#details').textContent=`${result.colors} colours · ${result.entries} palette entries · ${result.entities} text displays · Command text: ${(result.commandBytes/1000).toFixed(1)} KB`;
    progress(1,'Complete');setBusy(false);exportsEnabled(true);setView('pixels');
    status('Conversion complete.',`${result.frames} frame${result.frames===1?'':'s'} · Place the MID engine before the image item.`);
-   const notes=[];if(result.clipped&&(isVideo(file)||result.sourceFrames>1))notes.push(settings().capMode==='cut'?'The clip was cut short at the frame cap. Raise Frame cap to keep more of it.':'Frames were dropped across the whole clip to meet the frame cap. Playback is shorter; raise Frame cap to retain more frames.');if(result.weightLimited)notes.push('Hit the server\'s item data limit (about 2 MB of NBT), so this image was made smaller or given fewer colours. Going over gets you kicked when you take the item.');if(result.oversize)notes.push('Warning: this image is very large. Some frames are past the size Minecraft can safely send or save, so the display could kick players who go near it or stop its chunk from saving (a chunk ban). Lower the resolution to be safe.');if(result.exactColors&&result.colors<result.exactColors)notes.push(`Only ${result.colors} of the ${result.exactColors} colours could be used: at any size that fits Max item size, the image has no more distinct colours. Raise Max item size for more.`);if(result.bytes>900000)notes.push('Large items may not be handled well by the server and can get you kicked.');if(result.width*result.height>20000)notes.push('This exceeds the recommended 20,000 pixels per frame and can cause higher FPS lag.');notice(notes.join(' '));
+   const notes=[];if(result.clipped&&(isVideo(file)||result.sourceFrames>1))notes.push(settings().capMode==='cut'?'The clip was cut short at the frame cap. Raise Frame cap to keep more of it.':'Frames were dropped across the whole clip to meet the frame cap. Playback is shorter; raise Frame cap to retain more frames.');if(result.weightLimited)notes.push('Hit the server\'s item data limit (about 2 MB of NBT), so this image was made smaller or given fewer colours. Going over gets you kicked when you take the item.');if(result.overQuota)notes.push('Warning: this item is over the server\'s item data limit. Taking or holding it can get you kicked.');if(result.oversize)notes.push('Warning: this image is very large. Some frames are past the size Minecraft can safely send or save, so the display could kick players who go near it or stop its chunk from saving (a chunk ban). Lower the resolution to be safe.');if(result.exactColors&&result.colors<result.exactColors)notes.push(`Only ${result.colors} of the ${result.exactColors} colours could be used: at any size that fits Max item size, the image has no more distinct colours. Raise Max item size for more.`);if(result.bytes>ITEM_LIMIT)notes.push('Large items may not be handled well by the server and can get you kicked.');if(result.width*result.height>20000)notes.push('This exceeds the recommended 20,000 pixels per frame and can cause higher FPS lag.');notice(notes.join(' '));
   }
  };
  worker.onerror=()=>{if(current!==generation)return;setBusy(false);progress(progressFloor,'Failed');exportsEnabled(false);notice('The conversion worker could not run. Reload the site and try again.');status('Conversion interrupted.','Your media stayed on this device.');terminate();};
@@ -160,7 +162,7 @@ $('#download').onclick=async()=>{
  try{const blob=s.syntax==='datapack'?new Blob([await createDatapack([current],recipient)],{type:'application/zip'}):new Blob([current+'\n'],{type:'text/plain;charset=utf-8'});if(result!==currentResult||file!==currentFile||command!==current||signature!==JSON.stringify(settings()))return;saveBlob(blob,exportFilename(stem,s.syntax).replace(/\.mcfunction$/,'.zip'));}catch(e){notice(e.message);}finally{exportsEnabled(Boolean(result)&&signature===JSON.stringify(settings()));}
 };
 $('#resetSettings').onclick=()=>{if(busy)return;form.reset();try{localStorage.removeItem('mid-native-settings-v3');}catch{}edited();if(!result)status('Default settings restored.',file?'Press Convert when ready.':'Choose a file to begin.');};
-$('#help').onclick=()=>$('#guide').showModal();$('#closeGuide').onclick=()=>$('#guide').close();$('#guide').onclick=e=>{if(e.target===$('#guide')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}};
-$('#sample').onclick=async()=>{const r=await fetch('./assets/sample.gif?v=20261031.4');if(!r.ok){notice('The sample image could not be loaded.');return;}selectFile(new File([await r.blob()],'sample.gif',{type:'image/gif'}));};
+
+$('#sample').onclick=async()=>{const r=await fetch('./assets/sample.gif?v=20261031.8');if(!r.ok){notice('The sample image could not be loaded.');return;}selectFile(new File([await r.blob()],'sample.gif',{type:'image/gif'}));};
 try{const saved=JSON.parse(localStorage.getItem('mid-native-settings-v3')||'null');if(saved){for(const e of form.elements){if(!e.name)continue;if(e.type==='checkbox')e.checked=saved[e.name]==='on';else if(saved[e.name]!==undefined)e.value=saved[e.name];}}}catch{}
 syncRecipient(form,$('#recipientField'));updateFrameCapWarning();new ResizeObserver(draw).observe($('#stage'));document.addEventListener('visibilitychange',()=>{if(document.hidden)$('#sourceVideo').pause();lastFrame=performance.now();scheduleAnimation();});window.addEventListener('beforeunload',()=>{terminate();releaseVideo();if(sourceURL)URL.revokeObjectURL(sourceURL);});draw();
