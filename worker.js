@@ -1,10 +1,10 @@
-import {mediaId} from './media-id.js?v=20261031.9';
-import {framePlan,grayscaleFrames} from './timing.js?v=20261031.9';
-import {resizeNearest,resizeBicubic} from './pixels.js?v=20261031.9';
-import {paletteCounts,mediumQualityPalette,highQualityPalette,indexHighQuality,paletteTree,reconstructionError} from './quality.js?v=20261031.9';
-import {dimensions,paletteFor,raster,encodePixels,buildItem} from './codec.js?v=20261031.9';
-import {NBT_QUOTA,ITEM_LIMIT} from './numeric-codec.js?v=20261031.9';
-import {decodeGif} from './gif.js?v=20261031.9';
+import {mediaId} from './media-id.js?v=20261031.10';
+import {framePlan,grayscaleFrames} from './timing.js?v=20261031.10';
+import {resizeNearest,resizeBicubic} from './pixels.js?v=20261031.10';
+import {paletteCounts,mediumQualityPalette,highQualityPalette,indexHighQuality,paletteTree,reconstructionError} from './quality.js?v=20261031.10';
+import {dimensions,paletteFor,raster,encodePixels,buildItem} from './codec.js?v=20261031.10';
+import {NBT_QUOTA,ITEM_LIMIT} from './numeric-codec.js?v=20261031.10';
+import {decodeGif} from './gif.js?v=20261031.10';
 let lastProgress=0;
 const say=(value,message,force=false)=>{const now=performance.now();if(force||now-lastProgress>=33){lastProgress=now;postMessage({type:'progress',value,message});}};
 let last=null,decodedCache=null;

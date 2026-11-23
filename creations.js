@@ -1,8 +1,8 @@
-import {copyText,saveBlob} from './downloads.js?v=20261031.9';
-import {formatItem,exportFilename} from './item-format.js?v=20261031.9';
-import {createDatapack} from './datapack.js?v=20261031.9';
+import {copyText,saveBlob} from './downloads.js?v=20261031.10';
+import {formatItem,exportFilename} from './item-format.js?v=20261031.10';
+import {createDatapack} from './datapack.js?v=20261031.10';
 const sources=new Map();
-function source(id){if(!sources.has(id))sources.set(id,fetch(new URL(`./assets/creations/${id}.give.txt?v=20261031.9`,import.meta.url)).then(r=>{if(!r.ok)throw Error('The item could not load. Please try again.');return r.text();}).catch(error=>{sources.delete(id);throw error;}));return sources.get(id);}
+function source(id){if(!sources.has(id))sources.set(id,fetch(new URL(`./assets/creations/${id}.give.txt?v=20261031.10`,import.meta.url)).then(r=>{if(!r.ok)throw Error('The item could not load. Please try again.');return r.text();}).catch(error=>{sources.delete(id);throw error;}));return sources.get(id);}
 for(const card of document.querySelectorAll('.creation')){
  card.append(document.querySelector('#creation-export').content.cloneNode(true));
  const form=card.querySelector('form'),copy=card.querySelector('.copy'),save=card.querySelector('.download'),status=card.querySelector('.status'),recipient=card.querySelector('.recipient'),name=card.dataset.name;
