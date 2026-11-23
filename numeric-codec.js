@@ -1,4 +1,4 @@
-import {bytes} from './codec.js?v=20261031.8';
+import {bytes} from './codec.js?v=20261031.9';
 export const B=a=>({$b:a}), S=a=>({$s:a}), I=a=>({$i:a});
 export const values=v=>v?.$b??v?.$s??v?.$i;
 export function nbtSize(v){
